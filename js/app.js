@@ -4,6 +4,7 @@ import {
   bindTaskForm,
   bindTaskList,
   confirmDelete,
+  fillForm,
   renderTasks,
   resetForm,
   showFormError,
@@ -16,10 +17,11 @@ const FORM_ERRORS = {
 
 const state = {
   tasks: [],
+  editingId: null,
 };
 
 function render() {
-  renderTasks(state.tasks);
+  renderTasks(state.tasks, state.editingId);
 }
 
 // Guarda y vuelve a dibujar tras cada cambio del estado
@@ -48,9 +50,31 @@ function handleSubmit(values) {
     return;
   }
 
-  state.tasks.push(createTask(values));
+  const editing = state.editingId && findTask(state.editingId);
+  if (editing) {
+    editing.title = values.title.trim();
+    editing.priority = values.priority;
+  } else {
+    state.tasks.push(createTask(values));
+  }
+
+  state.editingId = null;
   persist();
   resetForm();
+}
+
+function handleEdit(id) {
+  const task = findTask(id);
+  if (!task) return;
+  state.editingId = id;
+  fillForm(task);
+  render();
+}
+
+function handleCancel() {
+  state.editingId = null;
+  resetForm();
+  render();
 }
 
 function handleToggle(id, completed) {
@@ -64,12 +88,16 @@ function handleDelete(id) {
   const task = findTask(id);
   if (!task || !confirmDelete(task.title)) return;
   state.tasks = state.tasks.filter((item) => item !== task);
+  if (state.editingId === id) {
+    state.editingId = null;
+    resetForm();
+  }
   persist();
 }
 
 function init() {
-  bindTaskForm(handleSubmit);
-  bindTaskList({ toggle: handleToggle, delete: handleDelete });
+  bindTaskForm(handleSubmit, handleCancel);
+  bindTaskList({ toggle: handleToggle, edit: handleEdit, delete: handleDelete });
 
   state.tasks = loadTasks().filter(isTask);
   render();

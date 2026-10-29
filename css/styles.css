@@ -273,6 +273,10 @@ button:focus-visible {
   overflow-wrap: anywhere;
 }
 
+.task.is-editing {
+  border-color: var(--accent);
+}
+
 .task.is-completed .task-title {
   color: var(--muted);
   text-decoration: line-through;

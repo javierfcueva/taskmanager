@@ -11,6 +11,8 @@ const elements = {
   title: document.getElementById('task-title'),
   priority: document.getElementById('task-priority'),
   formError: document.getElementById('form-error'),
+  submit: document.getElementById('form-submit'),
+  cancel: document.getElementById('form-cancel'),
   list: document.getElementById('task-list'),
   emptyState: document.getElementById('empty-state'),
 };
@@ -31,10 +33,11 @@ function actionButton(action, label, extraClass = '') {
   return button;
 }
 
-function createTaskItem(task) {
+function createTaskItem(task, isEditing) {
   const item = el('li', 'task');
   item.dataset.id = task.id;
   item.classList.toggle('is-completed', task.completed);
+  item.classList.toggle('is-editing', isEditing);
 
   const checkbox = el('input', 'task-check');
   checkbox.type = 'checkbox';
@@ -65,8 +68,9 @@ function getTaskId(node) {
   return node.closest('.task').dataset.id;
 }
 
-export function renderTasks(tasks) {
-  elements.list.replaceChildren(...tasks.map(createTaskItem));
+export function renderTasks(tasks, editingId = null) {
+  const items = tasks.map((task) => createTaskItem(task, String(task.id) === editingId));
+  elements.list.replaceChildren(...items);
   elements.emptyState.hidden = tasks.length > 0;
 }
 
@@ -83,9 +87,22 @@ export function clearFormError() {
   Object.values(formFields).forEach((input) => input.classList.remove('is-invalid'));
 }
 
+// Deja el formulario vacío y en modo crear
 export function resetForm() {
   elements.form.reset();
   clearFormError();
+  elements.submit.textContent = 'Agregar';
+  elements.cancel.hidden = true;
+  elements.title.focus();
+}
+
+// Carga la tarea en el formulario y lo pasa a modo edición
+export function fillForm(task) {
+  clearFormError();
+  elements.title.value = task.title;
+  elements.priority.value = task.priority;
+  elements.submit.textContent = 'Guardar';
+  elements.cancel.hidden = false;
   elements.title.focus();
 }
 
@@ -93,11 +110,13 @@ export function confirmDelete(title) {
   return window.confirm(`¿Eliminar la tarea "${title}"?`);
 }
 
-export function bindTaskForm(onSubmit) {
+export function bindTaskForm(onSubmit, onCancel) {
   elements.form.addEventListener('submit', (event) => {
     event.preventDefault();
     onSubmit({ title: elements.title.value, priority: elements.priority.value });
   });
+
+  elements.cancel.addEventListener('click', onCancel);
 
   // El error se quita del campo en cuanto el usuario lo corrige
   for (const input of Object.values(formFields)) {
