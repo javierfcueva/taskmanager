@@ -1,4 +1,5 @@
-import { loadTasks, saveTasks } from './storage.js';
+import { fetchTodos } from './api.js';
+import { hasStoredTasks, loadTasks, saveTasks } from './storage.js';
 import { createTask, isTask, PRIORITIES } from './task.js';
 import {
   bindTaskForm,
@@ -8,12 +9,15 @@ import {
   renderTasks,
   resetForm,
   showFormError,
+  showToast,
 } from './ui.js';
 
 const FORM_ERRORS = {
   title: 'El título no puede estar vacío.',
   priority: 'Selecciona una prioridad.',
 };
+
+const HOUR = 60 * 60 * 1000;
 
 const state = {
   tasks: [],
@@ -95,12 +99,47 @@ function handleDelete(id) {
   persist();
 }
 
-function init() {
+// La API no trae prioridad ni fecha: se asignan de forma determinista,
+// con fechas escalonadas una hora hacia atrás para que el orden tenga sentido
+function fromTodo(todo, index, now) {
+  return createTask({
+    id: `api-${todo.id}`,
+    title: todo.title,
+    completed: todo.completed,
+    priority: PRIORITIES[todo.id % PRIORITIES.length],
+    createdAt: new Date(now - index * HOUR).toISOString(),
+  });
+}
+
+async function importFromApi() {
+  let todos;
+  try {
+    todos = await fetchTodos();
+  } catch (error) {
+    showToast(`No se pudieron cargar las tareas de la API: ${error.message}.`, 'error');
+    return;
+  }
+
+  const existing = new Set(state.tasks.map((task) => String(task.id)));
+  const now = Date.now();
+  const imported = todos
+    .map((todo, index) => fromTodo(todo, index, now))
+    .filter((task) => isTask(task) && !existing.has(task.id));
+
+  state.tasks.push(...imported);
+  persist();
+  showToast(`Se importaron ${imported.length} tareas de la API.`);
+}
+
+async function init() {
   bindTaskForm(handleSubmit, handleCancel);
   bindTaskList({ toggle: handleToggle, edit: handleEdit, delete: handleDelete });
 
+  // loadTasks borra la clave si está corrupta, así que va antes de hasStoredTasks
   state.tasks = loadTasks().filter(isTask);
   render();
+
+  if (!hasStoredTasks()) await importFromApi();
 }
 
 init();

@@ -15,9 +15,13 @@ const elements = {
   cancel: document.getElementById('form-cancel'),
   list: document.getElementById('task-list'),
   emptyState: document.getElementById('empty-state'),
+  toast: document.getElementById('toast'),
 };
 
 const formFields = { title: elements.title, priority: elements.priority };
+
+const TOAST_DURATION = 4000;
+let toastTimer;
 
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -104,6 +108,17 @@ export function fillForm(task) {
   elements.submit.textContent = 'Guardar';
   elements.cancel.hidden = false;
   elements.title.focus();
+}
+
+// Un mensaje nuevo reemplaza al anterior y reinicia el temporizador
+export function showToast(message, type = 'info') {
+  elements.toast.textContent = message;
+  elements.toast.classList.toggle('is-error', type === 'error');
+  elements.toast.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    elements.toast.hidden = true;
+  }, TOAST_DURATION);
 }
 
 export function confirmDelete(title) {

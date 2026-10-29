@@ -345,3 +345,8 @@ button:focus-visible {
   border-radius: var(--radius);
   font-size: 0.875rem;
 }
+
+.toast.is-error {
+  background: var(--danger);
+  color: #fff;
+}

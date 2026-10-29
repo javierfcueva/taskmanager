@@ -14,6 +14,11 @@ export function loadTasks() {
   }
 }
 
+// Distingue "nunca se guardó nada" de "el usuario borró todas las tareas" ([])
+export function hasStoredTasks() {
+  return localStorage.getItem(STORAGE_KEY) !== null;
+}
+
 export function saveTasks(tasks) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
 }
