@@ -13,6 +13,8 @@ const elements = {
   formError: document.getElementById('form-error'),
   submit: document.getElementById('form-submit'),
   cancel: document.getElementById('form-cancel'),
+  search: document.getElementById('search'),
+  filters: document.querySelector('.filters'),
   list: document.getElementById('task-list'),
   emptyState: document.getElementById('empty-state'),
   toast: document.getElementById('toast'),
@@ -72,9 +74,10 @@ function getTaskId(node) {
   return node.closest('.task').dataset.id;
 }
 
-export function renderTasks(tasks, editingId = null) {
+export function renderTasks(tasks, { editingId = null, emptyMessage = 'No hay tareas para mostrar.' } = {}) {
   const items = tasks.map((task) => createTaskItem(task, String(task.id) === editingId));
   elements.list.replaceChildren(...items);
+  elements.emptyState.textContent = emptyMessage;
   elements.emptyState.hidden = tasks.length > 0;
 }
 
@@ -140,6 +143,22 @@ export function bindTaskForm(onSubmit, onCancel) {
       if (!elements.form.querySelector('.is-invalid')) elements.formError.textContent = '';
     });
   }
+}
+
+// La búsqueda se aplica en cada tecla; el filtro activo se marca aquí y se avisa a app.js
+export function bindToolbar({ search, filter }) {
+  elements.search.addEventListener('input', () => search(elements.search.value));
+
+  elements.filters.addEventListener('click', (event) => {
+    const button = event.target.closest('.filter');
+    if (!button) return;
+    for (const item of elements.filters.querySelectorAll('.filter')) {
+      const isActive = item === button;
+      item.classList.toggle('is-active', isActive);
+      item.setAttribute('aria-pressed', String(isActive));
+    }
+    filter(button.dataset.filter);
+  });
 }
 
 // Delegación: un listener en la lista para todos los ítems, presentes y futuros

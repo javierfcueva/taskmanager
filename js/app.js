@@ -4,6 +4,7 @@ import { createTask, isTask, PRIORITIES } from './task.js';
 import {
   bindTaskForm,
   bindTaskList,
+  bindToolbar,
   confirmDelete,
   fillForm,
   renderTasks,
@@ -19,13 +20,32 @@ const FORM_ERRORS = {
 
 const HOUR = 60 * 60 * 1000;
 
+const FILTERS = {
+  todas: () => true,
+  pendientes: (task) => !task.completed,
+  completadas: (task) => task.completed,
+};
+
 const state = {
   tasks: [],
   editingId: null,
+  filter: 'todas',
+  query: '',
 };
 
+function getVisibleTasks() {
+  const matchesFilter = FILTERS[state.filter];
+  return state.tasks.filter(
+    (task) => matchesFilter(task) && task.title.toLowerCase().includes(state.query),
+  );
+}
+
 function render() {
-  renderTasks(state.tasks, state.editingId);
+  const visible = getVisibleTasks();
+  const emptyMessage = state.tasks.length > 0
+    ? 'Ninguna tarea coincide con el filtro o la búsqueda.'
+    : 'No hay tareas para mostrar.';
+  renderTasks(visible, { editingId: state.editingId, emptyMessage });
 }
 
 // Guarda y vuelve a dibujar tras cada cambio del estado
@@ -99,6 +119,17 @@ function handleDelete(id) {
   persist();
 }
 
+function handleSearch(value) {
+  state.query = value.trim().toLowerCase();
+  render();
+}
+
+function handleFilter(filter) {
+  if (!Object.hasOwn(FILTERS, filter)) return;
+  state.filter = filter;
+  render();
+}
+
 // La API no trae prioridad ni fecha: se asignan de forma determinista,
 // con fechas escalonadas una hora hacia atrás para que el orden tenga sentido
 function fromTodo(todo, index, now) {
@@ -134,6 +165,7 @@ async function importFromApi() {
 async function init() {
   bindTaskForm(handleSubmit, handleCancel);
   bindTaskList({ toggle: handleToggle, edit: handleEdit, delete: handleDelete });
+  bindToolbar({ search: handleSearch, filter: handleFilter });
 
   // loadTasks borra la clave si está corrupta, así que va antes de hasStoredTasks
   state.tasks = loadTasks().filter(isTask);
