@@ -7,7 +7,9 @@
   --accent: #b8862b;
   --accent-strong: #9a6f12;
   --danger: #b4412f;
+  --on-danger: #ffffff;
   --success: #3f7a4d;
+  --priority-media: var(--accent-strong);
 
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
@@ -25,6 +27,10 @@
     --border: #2a2d31;
     --accent: #d2b07a;
     --accent-strong: #b8862b;
+    --danger: #e5806d;
+    --on-danger: #0f1012;
+    --success: #7fbf8e;
+    --priority-media: var(--accent);
   }
 }
 
@@ -304,7 +310,7 @@ button:focus-visible {
 }
 
 .badge-media {
-  color: var(--accent);
+  color: var(--priority-media);
 }
 
 .badge-baja {
@@ -348,5 +354,81 @@ button:focus-visible {
 
 .toast.is-error {
   background: var(--danger);
-  color: #fff;
+  color: var(--on-danger);
+}
+
+/* Móvil */
+@media (max-width: 600px) {
+  .site-header {
+    padding: 2rem 0 1.5rem;
+  }
+
+  .site-header h1 {
+    font-size: 1.6rem;
+  }
+
+  .stats {
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .stat {
+    padding: 0.6rem 0.75rem;
+  }
+
+  .stat-label {
+    font-size: 0.6rem;
+  }
+
+  .stat-value {
+    font-size: 1.35rem;
+  }
+
+  .panel {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .task-form,
+  .toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions .btn {
+    flex: 1;
+  }
+
+  .filters {
+    height: 40px;
+  }
+
+  .filter {
+    flex: 1;
+    padding: 0 0.5rem;
+  }
+
+  .sort {
+    width: 100%;
+  }
+
+  /* Con menos de 16px, Safari en iOS hace zoom al enfocar el campo */
+  input[type="text"],
+  input[type="search"],
+  select {
+    font-size: 16px;
+  }
+
+  .task {
+    grid-template-columns: auto 1fr;
+    padding: 0.75rem;
+  }
+
+  .task-actions {
+    grid-column: 2;
+  }
+
+  .toast {
+    left: 1rem;
+    max-width: none;
+  }
 }
