@@ -4,6 +4,8 @@ const dateFormat = new Intl.DateTimeFormat('es-EC', {
   day: '2-digit',
   month: 'short',
   year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
 });
 
 const elements = {
@@ -15,6 +17,10 @@ const elements = {
   cancel: document.getElementById('form-cancel'),
   search: document.getElementById('search'),
   filters: document.querySelector('.filters'),
+  sort: document.getElementById('sort'),
+  statTotal: document.getElementById('stat-total'),
+  statPending: document.getElementById('stat-pending'),
+  statCompleted: document.getElementById('stat-completed'),
   list: document.getElementById('task-list'),
   emptyState: document.getElementById('empty-state'),
   toast: document.getElementById('toast'),
@@ -79,6 +85,12 @@ export function renderTasks(tasks, { editingId = null, emptyMessage = 'No hay ta
   elements.list.replaceChildren(...items);
   elements.emptyState.textContent = emptyMessage;
   elements.emptyState.hidden = tasks.length > 0;
+}
+
+export function renderStats({ total, pending, completed }) {
+  elements.statTotal.textContent = total;
+  elements.statPending.textContent = pending;
+  elements.statCompleted.textContent = completed;
 }
 
 export function showFormError(message, fields) {
@@ -146,8 +158,9 @@ export function bindTaskForm(onSubmit, onCancel) {
 }
 
 // La búsqueda se aplica en cada tecla; el filtro activo se marca aquí y se avisa a app.js
-export function bindToolbar({ search, filter }) {
+export function bindToolbar({ search, filter, sort }) {
   elements.search.addEventListener('input', () => search(elements.search.value));
+  elements.sort.addEventListener('change', () => sort(elements.sort.value));
 
   elements.filters.addEventListener('click', (event) => {
     const button = event.target.closest('.filter');

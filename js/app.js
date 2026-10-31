@@ -7,6 +7,7 @@ import {
   bindToolbar,
   confirmDelete,
   fillForm,
+  renderStats,
   renderTasks,
   resetForm,
   showFormError,
@@ -26,18 +27,40 @@ const FILTERS = {
   completadas: (task) => task.completed,
 };
 
+const PRIORITY_WEIGHT = { alta: 3, media: 2, baja: 1 };
+
+const byDate = (a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt);
+const byPriority = (a, b) => PRIORITY_WEIGHT[a.priority] - PRIORITY_WEIGHT[b.priority];
+
+// A igual prioridad, primero la más reciente
+const SORTERS = {
+  'fecha-desc': (a, b) => byDate(b, a),
+  'fecha-asc': byDate,
+  'prioridad-desc': (a, b) => byPriority(b, a) || byDate(b, a),
+  'prioridad-asc': (a, b) => byPriority(a, b) || byDate(b, a),
+};
+
 const state = {
   tasks: [],
   editingId: null,
   filter: 'todas',
   query: '',
+  sort: 'fecha-desc',
 };
 
+// filter() devuelve un arreglo nuevo, así que sort() no altera state.tasks
 function getVisibleTasks() {
   const matchesFilter = FILTERS[state.filter];
-  return state.tasks.filter(
-    (task) => matchesFilter(task) && task.title.toLowerCase().includes(state.query),
-  );
+  return state.tasks
+    .filter((task) => matchesFilter(task) && task.title.toLowerCase().includes(state.query))
+    .sort(SORTERS[state.sort]);
+}
+
+// Las métricas cuentan todas las tareas, sin importar filtro ni búsqueda
+function getStats() {
+  const total = state.tasks.length;
+  const completed = state.tasks.filter((task) => task.completed).length;
+  return { total, pending: total - completed, completed };
 }
 
 function render() {
@@ -46,6 +69,7 @@ function render() {
     ? 'Ninguna tarea coincide con el filtro o la búsqueda.'
     : 'No hay tareas para mostrar.';
   renderTasks(visible, { editingId: state.editingId, emptyMessage });
+  renderStats(getStats());
 }
 
 // Guarda y vuelve a dibujar tras cada cambio del estado
@@ -130,6 +154,12 @@ function handleFilter(filter) {
   render();
 }
 
+function handleSort(sort) {
+  if (!Object.hasOwn(SORTERS, sort)) return;
+  state.sort = sort;
+  render();
+}
+
 // La API no trae prioridad ni fecha: se asignan de forma determinista,
 // con fechas escalonadas una hora hacia atrás para que el orden tenga sentido
 function fromTodo(todo, index, now) {
@@ -165,7 +195,7 @@ async function importFromApi() {
 async function init() {
   bindTaskForm(handleSubmit, handleCancel);
   bindTaskList({ toggle: handleToggle, edit: handleEdit, delete: handleDelete });
-  bindToolbar({ search: handleSearch, filter: handleFilter });
+  bindToolbar({ search: handleSearch, filter: handleFilter, sort: handleSort });
 
   // loadTasks borra la clave si está corrupta, así que va antes de hasStoredTasks
   state.tasks = loadTasks().filter(isTask);
